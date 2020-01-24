@@ -1,4 +1,4 @@
-# Implementation of Boostrap Regression
+# Implementation of Bootstrapping Technique
 
 ## Introduction
 
