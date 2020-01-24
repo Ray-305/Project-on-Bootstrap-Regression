@@ -1,0 +1,90 @@
+\section{Bootstrap Regression}
+\subsection{Data}
+```{r}
+df = read.csv("Downloads/Admission_Predict.csv")
+head(df)
+
+scatter.smooth(x=df$GRE.Score, y=df$Chance.of.Admit, main="Chance.of.Admit ~ GRE.Score")
+```
+\subsection{Sample Regression}
+```{r}
+linearMod = lm(Chance.of.Admit ~ GRE.Score + TOEFL.Score + University.Rating 
+                + SOP + LOR + CGPA + Research, data=df)
+betas_reg = linearMod$coefficients
+se = sqrt(diag(vcov(linearMod)))
+summary(linearMod)
+```
+\subsection{Distribution of Beta Coeffecient based on Std. Error }
+```{r}
+par(mfrow=c(2,3))
+
+b_GRE.Score = rnorm(1000,  betas_reg[2], se[2])
+hist(b_GRE.Score, freq=FALSE); lines(density(b_GRE.Score))
+
+b_TOEFL.Score = rnorm(1000,  betas_reg[3], se[3])
+hist(b_TOEFL.Score, freq=FALSE); lines(density(b_TOEFL.Score))
+
+b_University.Rating = rnorm(1000,  betas_reg[4], se[4])
+hist(b_University.Rating, freq=FALSE); lines(density(b_University.Rating))
+
+b_SOP = rnorm(1000,  betas_reg[5], se[5])
+hist(b_SOP, freq=FALSE); lines(density(b_SOP))
+
+b_LOR = rnorm(1000,  betas_reg[6], se[6])
+hist(b_LOR, freq=FALSE); lines(density(b_LOR))
+
+b_CGPA = rnorm(1000,  betas_reg[7], se[7])
+hist(b_CGPA , freq=FALSE); lines(density(b_CGPA))
+
+```
+\subsection{Bootstrap Regression}
+```{r}
+n = length(df$Serial.No.)
+b_GRE.Score = c()
+b_TOEFL.Score = c()
+b_University.Rating = c()
+b_SOP = c()
+b_LOR = c()
+b_CGPA = c()
+
+
+for(i in 1:1000){
+  df_temp = df[sample(nrow(df), n, replace=TRUE), ]
+  
+  linearMod1 = lm(Chance.of.Admit ~ GRE.Score + TOEFL.Score + University.Rating 
+                  + SOP + LOR + CGPA + Research, data=df_temp)
+  betas = linearMod1$coefficients
+  b_GRE.Score = c(b_GRE.Score, unname(betas[2]))
+  b_TOEFL.Score = c(b_TOEFL.Score, unname(betas[3]))
+  b_University.Rating = c(b_University.Rating, unname(betas[4]))
+  b_SOP = c(b_SOP, unname(betas[5]))
+  b_LOR = c(b_LOR, unname(betas[6]))
+  b_CGPA = c(b_CGPA, unname(betas[7]))
+}
+
+par(mfrow=c(2,3))
+hist(b_GRE.Score, freq=FALSE); lines(density(b_GRE.Score))
+hist(b_TOEFL.Score, freq=FALSE); lines(density(b_TOEFL.Score))
+hist(b_University.Rating, freq=FALSE); lines(density(b_University.Rating))
+hist(b_SOP, freq=FALSE); lines(density(b_SOP))
+hist(b_LOR, freq=FALSE); lines(density(b_LOR))
+hist(b_CGPA , freq=FALSE); lines(density(b_CGPA))
+
+```
+\subsection{Table for Comparison}
+```{r}
+library(knitr)
+betas_bs_mean = c(mean(b_GRE.Score), mean(b_TOEFL.Score), mean(b_University.Rating),
+                  mean(b_SOP), mean(b_LOR), mean(b_CGPA))
+
+betas_bs_se = c(sqrt(var(b_GRE.Score)), sqrt(var(b_TOEFL.Score)), sqrt(var(b_University.Rating)),
+                sqrt(var(b_SOP)), sqrt(var(b_LOR)), sqrt(var(b_CGPA)))
+
+result = data.frame(variable_name=colnames(df)[2:7],
+                    sample_b=round(unname(betas_reg[2:7]), 4),
+                    sample_se=round(unname(se[2:7]), 7),
+                    bootstrap_b_mean= round(betas_bs_mean, 4),
+                    bootstrap_b_se= round(betas_bs_se, 7) )
+kable(result)
+print('   ')
+```
